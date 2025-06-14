@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>LED Peach Glow</title>
+  <style>
+    html, body {
+      background-color: black;     /* พื้นหลังสีดำ */
+      margin: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      image-rendering: pixelated;  /* ทำให้ดูเป็นจุดพิกเซล */
+    }
+  </style>
+</head>
+<body>
+  <!-- พื้นที่แสดงไฟ LED -->
+  <canvas id="ledCanvas" width="800" height="200"></canvas>
+
+  <script>
+    // ✅ รอให้ DOM โหลดเสร็จก่อนเริ่มทำงาน
+    window.onload = function () {
+      const canvas = document.getElementById("ledCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const text = "今日は月がきれいですね。";   // ข้อความภาษาญี่ปุ่น
+      const fontSize = 100;
+      const spacing = 6;
+
+      // ✅ ตั้งค่าฟอนต์และวาดข้อความ (เพื่อใช้เป็นต้นแบบจุด LED)
+      ctx.font = fontSize + "px sans-serif"; // sans-serif รองรับภาษาญี่ปุ่น
+      ctx.fillStyle = "white";               // วาดด้วยสีขาวให้เด่น
+      ctx.fillText(text, 10, fontSize);
+
+      // ✅ วาดเส้นขอบสีแดงช่วย debug ว่ามีการวาดจริงมั้ย
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 1;
+      ctx.strokeText(text, 10, fontSize);
+
+      // ✅ อ่านพิกเซลใน canvas
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const dots = [];
+
+      // ✅ หาเฉพาะพิกเซลที่มีค่า alpha > 128 (คือมีตัวอักษร)
+      for (let y = 0; y < imageData.height; y += spacing) {
+        for (let x = 0; x < imageData.width; x += spacing) {
+          const i = (y * imageData.width + x) * 4;
+          if (imageData.data[i + 3] > 128) {
+            dots.push({x, y, phase: Math.random() * 2 * Math.PI});
+          }
+        }
+      }
+
+      console.log("จำนวนจุด LED:", dots.length); // ✅ debug
+
+      // ✅ ฟังก์ชันวาด LED กระพริบ
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // เคลียร์ทุกเฟรม
+        const t = Date.now() / 200;
+        for (const d of dots) {
+          const glow = Math.sin(t + d.phase) * 0.5 + 0.5; // ค่าความสว่าง (0-1)
+          ctx.fillStyle = `rgba(255, 182, 193, ${glow})`; // สีชมพูพีช + glow
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, 2.5, 0, Math.PI * 2);         // วาดจุดวงกลม
+          ctx.fill();
+        }
+        requestAnimationFrame(draw); // วาดซ้ำเรื่อย ๆ แบบ smooth
+      }
+
+      draw(); // ✅ เริ่มแสดงผล LED!
+    };
+  </script>
+</body>
+</html>
