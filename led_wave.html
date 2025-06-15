@@ -29,49 +29,35 @@
       const fontSize = 100;
       const spacing = 6;
 
-      // วาดข้อความลง canvas
+      // วาดข้อความต้นแบบ
       ctx.font = fontSize + "px sans-serif";
       ctx.fillStyle = "white";
       ctx.fillText(text, 10, fontSize);
 
-      // อ่านพิกเซลของข้อความ
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const dots = [];
-
-      // เวลาที่เริ่มต้นไว้ใช้สำหรับ delay
       const startTime = Date.now();
 
-      // แปลงข้อความเป็นจุด และกำหนด delay แบบสุ่มแต่ละจุด
       for (let y = 0; y < imageData.height; y += spacing) {
         for (let x = 0; x < imageData.width; x += spacing) {
           const i = (y * imageData.width + x) * 4;
-          const alpha = imageData.data[i + 3];
-          if (alpha > 128) {
-            dots.push({
-              x: x,
-              y: y,
-              delay: Math.random() * 2000 // แสดงช้าเร็วไม่เท่ากัน
-            });
+          if (imageData.data[i + 3] > 128) {
+            dots.push({ x, y, delay: Math.random() * 2000 }); // delay แบบสุ่ม
           }
         }
       }
 
-      // ฟังก์ชันวาดจุด LED ทีละดวง
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         const now = Date.now();
-
         for (const d of dots) {
           if (now - startTime > d.delay) {
-            // แสดงเฉพาะจุดที่ถึงเวลาแล้ว
-            ctx.fillStyle = "rgb(255, 182, 193)"; // สีชมพูพีช
+            ctx.fillStyle = "rgb(255, 182, 193)";
             ctx.beginPath();
             ctx.arc(d.x, d.y, 3, 0, Math.PI * 2);
             ctx.fill();
           }
         }
-
         requestAnimationFrame(draw);
       }
 
