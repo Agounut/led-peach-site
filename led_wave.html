@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>LED Peach Glow</title>
+  <style>
+    html, body {
+      background-color: black;     /* พื้นหลังสีดำ */
+      margin: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    canvas {
+      image-rendering: pixelated;  /* ทำให้ดูเป็นจุดพิกเซล */
+    }
+  </style>
+</head>
+<body>
+  <!-- พื้นที่แสดงไฟ LED -->
+  <canvas id="ledCanvas" width="800" height="200"></canvas>
+
+  <script>
+    // ✅ รอให้ DOM โหลดเสร็จก่อนเริ่มทำงาน
+    window.onload = function () {
+      const canvas = document.getElementById("ledCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const text = "今日は月がきれいですね。";   // ข้อความภาษาญี่ปุ่น
+      const fontSize = 100;
+      const spacing = 6;
+
+      // ✅ ตั้งค่าฟอนต์และวาดข้อความ
+      ctx.font = fontSize + "px sans-serif"; // sans-serif รองรับภาษาญี่ปุ่น
+      ctx.fillStyle = "white";
+      ctx.fillText(text, 10, fontSize);
+
+      // ✅ อ่านพิกเซลใน canvas
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const dots = [];
+
+      const startTime = Date.now(); // ✅ เพิ่มเวลาเริ่มต้นไว้ใช้คำนวณ delay
+
+      // ✅ เปลี่ยนจาก phase เป็น delay
+      for (let y = 0; y < imageData.height; y += spacing) {
+        for (let x = 0; x < imageData.width; x += spacing) {
+          const i = (y * imageData.width + x) * 4;
+          if (imageData.data[i + 3] > 128) {
+            dots.push({
+              x,
+              y,
+              delay: Math.random() * 3000  // ✅ ให้จุดแต่ละจุดดีเลย์การแสดงผล
+            });
+          }
+        }
+      }
+
+      // ✅ เปลี่ยน draw จาก glow → วิ่งขึ้นทีละจุด
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // เคลียร์ทุกเฟรม
+        const now = Date.now();
+
+        for (const d of dots) {
+          if (now - startTime > d.delay) { // ✅ แสดงเฉพาะจุดที่เลยเวลา delay ไปแล้ว
+            ctx.fillStyle = "rgb(255, 182, 193)"; // สีชมพูพีช
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, 3, 0, Math.PI * 2); // ✅ ขนาดใหญ่ขึ้น (จาก 2.5 → 3)
+            ctx.fill();
+          }
+        }
+
+        requestAnimationFrame(draw); // เรียกซ้ำตลอดเวลา
+      }
+
+      draw(); // ✅ เริ่มแสดงผล LED ทีละดวง!
+    };
+  </script>
+</body>
+</html>
+
+
+
