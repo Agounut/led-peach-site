@@ -24,12 +24,14 @@ window.onload = function () {
   const canvas = document.getElementById("ledCanvas");
   const ctx = canvas.getContext("2d");
 
-  const message = "君が生まれた今日は、世界が少しだけ優しくなった日だ。";
+const message1 = "君が生まれた今日は、";
+const message2 = "世界が少しだけ優しくなった日だ。";
   const fontSize = 80;
   const spacing = 2;
   ctx.font = `${fontSize}px sans-serif`;
   ctx.fillStyle = "white";
-  ctx.fillText(message, 20, fontSize);
+  ctx.fillText(message1, 20, fontSize);
+  ctx.fillText(message2, 20, fontSize + 100);
 
   const textData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   let dots = [];
