@@ -2,77 +2,134 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>LED Peach Glow</title>
+  <title>Happy Birthday LED Pixel-by-Pixel</title>
   <style>
     html, body {
-      background-color: black;     /* พื้นหลังสีดำ */
       margin: 0;
+      background-color: black;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      overflow: hidden;
     }
     canvas {
-      image-rendering: pixelated;  /* ทำให้ดูเป็นจุดพิกเซล */
+      display: block;
+      image-rendering: pixelated;
     }
   </style>
 </head>
 <body>
-  <!-- พื้นที่แสดงไฟ LED -->
-  <canvas id="ledCanvas" width="800" height="200"></canvas>
+<canvas id="ledCanvas" width="1300" height="400"></canvas>
 
-  <script>
-    // ✅ รอให้ DOM โหลดเสร็จก่อนเริ่มทำงาน
-    window.onload = function () {
-      const canvas = document.getElementById("ledCanvas");
-      const ctx = canvas.getContext("2d");
+<script>
+window.onload = function () {
+  const canvas = document.getElementById("ledCanvas");
+  const ctx = canvas.getContext("2d");
 
-      const text = "今日は月がきれいですね。";   // ข้อความภาษาญี่ปุ่น
-      const fontSize = 100;
-      const spacing = 6;
+  const message = "君が生まれた今日は、世界が少しだけ優しくなった日だ。";
+  const fontSize = 80;
+  const spacing = 2;
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.fillStyle = "white";
+  ctx.fillText(message, 20, fontSize);
 
-      // ✅ ตั้งค่าฟอนต์และวาดข้อความ (เพื่อใช้เป็นต้นแบบจุด LED)
-      ctx.font = fontSize + "px sans-serif"; // sans-serif รองรับภาษาญี่ปุ่น
-      ctx.fillStyle = "white";               // วาดด้วยสีขาวให้เด่น
-      ctx.fillText(text, 10, fontSize);
+  const textData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let dots = [];
 
-      // ✅ วาดเส้นขอบสีแดงช่วย debug ว่ามีการวาดจริงมั้ย
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 1;
-      ctx.strokeText(text, 10, fontSize);
+  for (let y = 0; y < textData.height; y += spacing) {
+    for (let x = 0; x < textData.width; x += spacing) {
+      const i = (y * textData.width + x) * 4;
+      if (textData.data[i + 3] > 128) {
+        dots.push({x, y, active: false});
+      }
+    }
+  }
 
-      // ✅ อ่านพิกเซลใน canvas
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const dots = [];
+  dots = dots.sort(() => Math.random() - 0.5); // สุ่มลำดับจุด
+  let litCount = 0;
+  let finished = false;
 
-      // ✅ หาเฉพาะพิกเซลที่มีค่า alpha > 128 (คือมีตัวอักษร)
-      for (let y = 0; y < imageData.height; y += spacing) {
-        for (let x = 0; x < imageData.width; x += spacing) {
-          const i = (y * imageData.width + x) * 4;
-          if (imageData.data[i + 3] > 128) {
-            dots.push({x, y, phase: Math.random() * 2 * Math.PI});
-          }
+  // 🎆 Fireworks
+  let fireworks = [];
+  function createFirework() {
+    const x = Math.random() * canvas.width;
+    const y = canvas.height;
+    const color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+    const particles = [];
+    for (let i = 0; i < 40; i++) {
+      const angle = Math.random() * 2 * Math.PI;
+      const speed = Math.random() * 3 + 2;
+      particles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        color: color
+      });
+    }
+    fireworks.push(particles);
+  }
+
+  setInterval(() => { if (finished) createFirework(); }, 1000);
+
+  function updateFireworks() {
+    for (const fw of fireworks) {
+      for (const p of fw) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.alpha *= 0.96;
+      }
+    }
+    fireworks = fireworks.filter(fw => fw.some(p => p.alpha > 0.1));
+  }
+
+  function drawFireworks() {
+    for (const fw of fireworks) {
+      for (const p of fw) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = p.color.replace(")", `, ${p.alpha})`).replace("hsl", "hsla");
+        ctx.fill();
+      }
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // ติดไฟทีละพิกเซล
+    if (litCount < dots.length) {
+      for (let i = 0; i < 20; i++) {
+        if (litCount < dots.length) {
+          dots[litCount].active = true;
+          litCount++;
         }
       }
+    } else {
+      finished = true;
+    }
 
-      console.log("จำนวนจุด LED:", dots.length); // ✅ debug
-
-      // ✅ ฟังก์ชันวาด LED กระพริบ
-      function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // เคลียร์ทุกเฟรม
-        const t = Date.now() / 200;
-        for (const d of dots) {
-          const glow = Math.sin(t + d.phase) * 0.5 + 0.5; // ค่าความสว่าง (0-1)
-          ctx.fillStyle = `rgba(255, 182, 193, ${glow})`; // สีชมพูพีช + glow
-          ctx.beginPath();
-          ctx.arc(d.x, d.y, 2.5, 0, Math.PI * 2);         // วาดจุดวงกลม
-          ctx.fill();
-        }
-        requestAnimationFrame(draw); // วาดซ้ำเรื่อย ๆ แบบ smooth
+    // วาดจุดที่ติดแล้ว
+    for (const d of dots) {
+      if (d.active) {
+        ctx.fillStyle = "#FFB6C1";
+        ctx.beginPath();
+        ctx.arc(d.x, d.y + 50, 2, 0, Math.PI * 2); // เลื่อนลงนิดเดียวพอดี
+        ctx.fill();
       }
+    }
 
-      draw(); // ✅ เริ่มแสดงผล LED!
-    };
-  </script>
+    if (finished) {
+      updateFireworks();
+      drawFireworks();
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+};
+</script>
 </body>
 </html>
